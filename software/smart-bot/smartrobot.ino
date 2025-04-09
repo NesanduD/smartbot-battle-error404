@@ -21,6 +21,10 @@
 // Proximity Sensor Pin (For Attack Control)
 #define PROX_PIN 35  // Digital Output from Proximity Sensor
 
+// IR Sensor Pins for Edge Detection
+#define LEFT_IR_SENSOR 33
+#define RIGHT_IR_SENSOR 34
+
 // Sensor Thresholds
 #define OBSTACLE_DISTANCE 20 // cm
 
@@ -36,6 +40,7 @@ void stopMoving();
 void checkUltrasonicSensors();
 long readUltrasonic(int trigPin, int echoPin);
 void checkProximitySensor();  // Punch Arm activation
+void checkEdgeDetection();    // Edge detection for falling
 
 // External Features (Only Prototypes)
 void activatePunchArm(); // Servo Punch
@@ -66,6 +71,10 @@ void setup() {
   // Proximity Sensor
   pinMode(PROX_PIN, INPUT);
 
+  // IR Sensor Pins for Edge Detection
+  pinMode(LEFT_IR_SENSOR, INPUT);
+  pinMode(RIGHT_IR_SENSOR, INPUT);
+
   // Servo Init
   punchServo.attach(SERVO_PIN);
   punchServo.write(90); // Initial Position
@@ -74,6 +83,7 @@ void setup() {
 void loop() {
   checkProximitySensor();    // Punch Arm Activation
   checkUltrasonicSensors();  // Movement Control
+  checkEdgeDetection();      // Edge Detection Logic
 }
 
 // ==== Movement Functions ====
@@ -148,19 +158,26 @@ long readUltrasonic(int trigPin, int echoPin) {
 
 // ==== Proximity Sensor Punch Control ====
 void checkProximitySensor() {
-  if (digitalRead(PROX_PIN) == HIGH) {
-    activatePunchArm();
+  if (// Add all of the conditions) {
+    activatePunchArm(); // activate punch arm if all the conditions met
   }
 }
 
 // ==== Punch Arm Function ====
 void activatePunchArm() {
-  punchServo.write(0);    // Punch
-  delay(300);
-  punchServo.write(90);   // Reset
+  // Punch code
+  // Reset code
 }
 
-// ==== Color Detection Strategy (Only Prototype) ====
+// ==== Edge Detection Function ====
+void checkEdgeDetection() {
+  // Read the 2 IR sensors to detect edges
+  // If an edge is detected on forward side, reverse the robot
+  // Logic to find out if robot completely outside, then stop the robot and call the function lost();
+  }
+}
+
+// ==== Color Detection Strategy ====
 void detectColor() {
   // Color sensor reading and strategy switching logic goes here
 }
