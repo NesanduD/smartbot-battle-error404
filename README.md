@@ -71,7 +71,7 @@ Track our tasks & progress here:
 | Name            | Role                      |
 |-----------------|---------------------------|
 | Nesandu         | Guidance System           |
-| Bashitha        | Design and Mechanisms     |
+| Bhashitha       | Design and Mechanisms     |
 | Upamali         | Color sensor based actions|
 | Yasiru          | PCB Designer              |
 | Hashini         | Scoreboard                |
