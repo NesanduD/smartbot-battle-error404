@@ -1,0 +1,17 @@
+# Ignore Python bytecode files
+*.pyc
+*.pyo
+
+# Ignore all node_modules folders
+node_modules/
+
+# Ignore log files
+*.log
+
+# Ignore IDE files (for example, VSCode, JetBrains)
+.vscode/
+.idea/
+
+# Ignore system files
+.DS_Store
+Thumbs.db
