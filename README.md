@@ -13,7 +13,7 @@ SmartBot Battle is a robotics-based project focused on developing two types of r
 
 These robots will engage in a competitive battle on a slippery surface with attack mechanisms like:
 - Punching Arm  
-- Lifter Mechanism  
+
 
 A Real-Time Scoreboard will display live match statistics.
 
@@ -59,18 +59,23 @@ smartbot-battle-error404/
 ## Project Board 📋
 
 Track our tasks & progress here:  
-> [GitHub Project Board](https://github.com/your-username/smartbot-battle-error404/projects)
+
+> [GitHub Project Board](https://github.com/NesanduD/smartbot-battle-error404/projects)
+
 
 ---
 
 ## Team — Error 404 🚀
 
-| Name            | Role                  |
-|-----------------|-----------------------|
-| Nesandu         | User Bot Developer    |
-| [Teammate 2]    | Smart Bot Developer   |
-| [Teammate 3]    | Scoreboard Developer  |
-| [Teammate 4]    | Hardware & Testing    |
+
+| Name            | Role                      |
+|-----------------|---------------------------|
+| Nesandu         | Guidance System           |
+| Bashitha        | Design and Mechanisms     |
+| Upamali         | Color sensor based actions|
+| Yasiru          | PCB Designer              |
+| Hashini         | Scoreboard                |
+
 
 ---
 
@@ -78,7 +83,9 @@ Track our tasks & progress here:
 
 ```bash
 # Clone Repo
-git clone https://github.com/your-username/smartbot-battle-error404.git
+
+git clone https://github.com/NesanduD/smartbot-battle-error404.git
+
 
 # Go to user-bot code
 cd smartbot-battle-error404/user-bot
@@ -89,4 +96,6 @@ cd smartbot-battle-error404/user-bot
 ---
 
 ## License 📜
-This project is developed as part of the University of Moratuwa SmartBot Battle competition.
+
+This project is developed as part of the University of Moratuwa First Year Hardware Project.
+
