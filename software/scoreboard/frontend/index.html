@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartBot Battle Scoreboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        #scoreboard {
+            text-align: center;
+            font-size: 24px;
+        }
+        #scoreboard div {
+            margin: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="scoreboard">
+        <div id="R1-score">Robot 1: 0</div>
+        <div id="R2-score">Robot 2: 0</div>
+    </div>
+
+    <script>
+        async function fetchScores() {
+            const response = await fetch('http://127.0.0.1:5000/get_scores');
+            const data = await response.json();
+            document.getElementById('R1-score').innerText = `Robot 1: ${data.scores.R1}`;
+            document.getElementById('R2-score').innerText = `Robot 2: ${data.scores.R2}`;
+
+        }
+
+        setInterval(fetchScores, 1000);  // Update scores every second
+    </script>
+</body>
+</html>
