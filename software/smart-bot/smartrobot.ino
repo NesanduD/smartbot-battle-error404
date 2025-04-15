@@ -9,14 +9,15 @@
 #define SERVO_PIN 32
 
 // Ultrasonic Sensor Pins (For Movement Control)
-#define TRIG_FRONT 4
-#define ECHO_FRONT 5
-#define TRIG_LEFT 18
-#define ECHO_LEFT 19
-#define TRIG_RIGHT 21
-#define ECHO_RIGHT 22
-#define TRIG_BACK 23
-#define ECHO_BACK 34
+// Updated sensor placement: top-left, top-right, bottom-left, bottom-right
+#define TRIG_TOP_LEFT 4
+#define ECHO_TOP_LEFT 5
+#define TRIG_TOP_RIGHT 18
+#define ECHO_TOP_RIGHT 19
+#define TRIG_BOTTOM_LEFT 21
+#define ECHO_BOTTOM_LEFT 22
+#define TRIG_BOTTOM_RIGHT 23
+#define ECHO_BOTTOM_RIGHT 34
 
 // Proximity Sensor Pin (For Attack Control)
 #define PROX_PIN 35  // Digital Output from Proximity Sensor
@@ -59,14 +60,14 @@ void setup() {
   pinMode(RIGHT_MOTOR_BACKWARD, OUTPUT);
 
   // Ultrasonic Pins
-  pinMode(TRIG_FRONT, OUTPUT);
-  pinMode(ECHO_FRONT, INPUT);
-  pinMode(TRIG_LEFT, OUTPUT);
-  pinMode(ECHO_LEFT, INPUT);
-  pinMode(TRIG_RIGHT, OUTPUT);
-  pinMode(ECHO_RIGHT, INPUT);
-  pinMode(TRIG_BACK, OUTPUT);
-  pinMode(ECHO_BACK, INPUT);
+  pinMode(TRIG_TOP_LEFT, OUTPUT);
+  pinMode(ECHO_TOP_LEFT, INPUT);
+  pinMode(TRIG_TOP_RIGHT, OUTPUT);
+  pinMode(ECHO_TOP_RIGHT, INPUT);
+  pinMode(TRIG_BOTTOM_LEFT, OUTPUT);
+  pinMode(ECHO_BOTTOM_LEFT, INPUT);
+  pinMode(TRIG_BOTTOM_RIGHT, OUTPUT);
+  pinMode(ECHO_BOTTOM_RIGHT, INPUT);
 
   // Proximity Sensor
   pinMode(PROX_PIN, INPUT);
@@ -86,7 +87,7 @@ void loop() {
   checkEdgeDetection();      // Edge Detection Logic
 }
 
-// ==== Movement Functions ====
+// ==== Movement Functions ==== 
 void moveForward() {
   digitalWrite(LEFT_MOTOR_FORWARD, HIGH);
   digitalWrite(LEFT_MOTOR_BACKWARD, LOW);
@@ -122,23 +123,28 @@ void stopMoving() {
   digitalWrite(RIGHT_MOTOR_BACKWARD, LOW);
 }
 
-// ==== Ultrasonic Sensor Handling ====
+// ==== Ultrasonic Sensor Handling ==== 
 void checkUltrasonicSensors() {
-  long frontDist = readUltrasonic(TRIG_FRONT, ECHO_FRONT);
-  long leftDist  = readUltrasonic(TRIG_LEFT, ECHO_LEFT);
-  long rightDist = readUltrasonic(TRIG_RIGHT, ECHO_RIGHT);
-  long backDist  = readUltrasonic(TRIG_BACK, ECHO_BACK);
+  long topLeftDist = readUltrasonic(TRIG_TOP_LEFT, ECHO_TOP_LEFT);
+  long topRightDist = readUltrasonic(TRIG_TOP_RIGHT, ECHO_TOP_RIGHT);
+  long bottomLeftDist = readUltrasonic(TRIG_BOTTOM_LEFT, ECHO_BOTTOM_LEFT);
+  long bottomRightDist = readUltrasonic(TRIG_BOTTOM_RIGHT, ECHO_BOTTOM_RIGHT);
 
   // Basic movement control based on ultrasonic sensor readings
-  if (frontDist < OBSTACLE_DISTANCE) {
+  if (topLeftDist < OBSTACLE_DISTANCE || topRightDist < OBSTACLE_DISTANCE ||
+      bottomLeftDist < OBSTACLE_DISTANCE || bottomRightDist < OBSTACLE_DISTANCE) {
     moveBackward();
     delay(300);
     turnLeft();
     delay(300);
-  } else if (leftDist < OBSTACLE_DISTANCE) {
+  } else if (topLeftDist < OBSTACLE_DISTANCE) {
     turnRight();
-  } else if (rightDist < OBSTACLE_DISTANCE) {
+  } else if (topRightDist < OBSTACLE_DISTANCE) {
     turnLeft();
+  } else if (bottomLeftDist < OBSTACLE_DISTANCE) {
+    moveBackward();
+  } else if (bottomRightDist < OBSTACLE_DISTANCE) {
+    moveBackward();
   } else {
     moveForward();
   }
@@ -156,28 +162,22 @@ long readUltrasonic(int trigPin, int echoPin) {
   return distance;
 }
 
-// ==== Proximity Sensor Punch Control ====
+// ==== Proximity Sensor Punch Control ==== 
 void checkProximitySensor() {
   if (// Add all of the conditions) {
     activatePunchArm(); // activate punch arm if all the conditions met
   }
 }
 
-// ==== Punch Arm Function ====
+// ==== Punch Arm Function ==== 
 void activatePunchArm() {
   // Punch code
   // Reset code
 }
 
-// ==== Edge Detection Function ====
+// ==== Edge Detection Function ==== 
 void checkEdgeDetection() {
   // Read the 2 IR sensors to detect edges
   // If an edge is detected on forward side, reverse the robot
   // Logic to find out if robot completely outside, then stop the robot and call the function lost();
-  }
-}
-
-// ==== Color Detection Strategy ====
-void detectColor() {
-  // Color sensor reading and strategy switching logic goes here
 }
