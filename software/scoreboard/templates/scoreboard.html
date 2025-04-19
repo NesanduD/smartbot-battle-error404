@@ -1,44 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartBot Battle Scoreboard</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f0f0f0;
-        }
-        #scoreboard {
-            text-align: center;
-            font-size: 24px;
-        }
-        #scoreboard div {
-            margin: 20px;
-        }
-    </style>
-</head>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>SmartBot Battle Scoreboard</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/scoreboard.css') }}">
+    </head>
+    
 <body>
-    <div id="scoreboard">
-        <div id="R1-score">Robot 1: 0</div>
-        <div id="R2-score">Robot 2: 0</div>
+    <div class="container">
+        <div class="scoreboard">
+            <div class="bot" id="smartbot">
+                <img src="smartbot.png" alt="SmartBot">
+                <h2>SmartBot</h2>
+                <div class="score" id="R1-score">0</div>
+            </div>
+
+            <div class="timer-section">
+                <div class="match-timer" id="match-timer">00:00</div>
+                <div class="last10" id="last10">LAST 10 SECONDS!</div>
+            </div>
+
+            <div class="bot" id="userbot">
+                <img src="userbot.png" alt="UserBot">
+                <h2>UserBot</h2>
+                <div class="score" id="R2-score">0</div>
+            </div>
+        </div>
+
+        <audio id="countdown-sound" src="countdown.mp3" preload="auto"></audio>
     </div>
 
     <script>
         async function fetchScores() {
             const response = await fetch('http://127.0.0.1:5000/get_scores');
             const data = await response.json();
-            document.getElementById('R1-score').innerText = `Robot 1: ${data.scores.R1}`;
-            document.getElementById('R2-score').innerText = `Robot 2: ${data.scores.R2}`;
-
+            document.getElementById('R1-score').innerText = data.scores.R1;
+            document.getElementById('R2-score').innerText = data.scores.R2;
         }
 
-        setInterval(fetchScores, 1000);  // Update scores every second
+        setInterval(fetchScores, 1000);
+
+        // Timer Logic
+        let totalSeconds = 60; // 1 minute match time
+        const timer = document.getElementById('match-timer');
+        const last10 = document.getElementById('last10');
+        const countdownSound = document.getElementById('countdown-sound');
+
+        function startMatchTimer() {
+            const interval = setInterval(() => {
+                let minutes = Math.floor(totalSeconds / 60);
+                let seconds = totalSeconds % 60;
+                timer.innerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+                if (totalSeconds <= 10 && totalSeconds > 0) {
+                    last10.style.display = 'block';
+                    last10.classList.add('flash');
+                    countdownSound.play();
+                }
+
+                if (totalSeconds === 0) {
+                    clearInterval(interval);
+                }
+
+                totalSeconds--;
+            }, 1000);
+        }
+
+        window.onload = startMatchTimer;
     </script>
 </body>
 </html>
