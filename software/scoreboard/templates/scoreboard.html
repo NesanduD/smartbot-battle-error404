@@ -1,30 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>SmartBot Battle Scoreboard</title>
-        <link rel="stylesheet" href="{{ url_for('static', filename='css/scoreboard.css') }}">
-    </head>
-    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartBot Battle Scoreboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/scoreboard.css') }}">
+</head>
 <body>
     <div class="container">
-        <div class="scoreboard">
+        <div class="scoreboard glass">
             <div class="bot" id="smartbot">
-                <img src="smartbot.png" alt="SmartBot">
+                <div class="bot-img">
+                    <img src="{{ url_for('static', filename='images/robot.png') }}" alt="SmartBot">
+                </div>
                 <h2>SmartBot</h2>
-                <div class="score" id="R1-score">0</div>
+                <div class="score glow" id="R1-score">0</div>
             </div>
 
             <div class="timer-section">
-                <div class="match-timer" id="match-timer">00:00</div>
-                <div class="last10" id="last10">LAST 10 SECONDS!</div>
+                <div class="match-timer neon" id="match-timer">00:00</div>
+                <div class="last10 neon" id="last10">LAST 10 SECONDS!</div>
             </div>
 
             <div class="bot" id="userbot">
-                <img src="userbot.png" alt="UserBot">
+                <div class="bot-img">
+                    <img src="{{ url_for('static', filename='images/robot.png') }}" alt="UserBot">
+                </div>
                 <h2>UserBot</h2>
-                <div class="score" id="R2-score">0</div>
+                <div class="score glow" id="R2-score">0</div>
             </div>
         </div>
 
@@ -41,8 +44,7 @@
 
         setInterval(fetchScores, 1000);
 
-        // Timer Logic
-        let totalSeconds = 60; // 1 minute match time
+        let totalSeconds = 15;
         const timer = document.getElementById('match-timer');
         const last10 = document.getElementById('last10');
         const countdownSound = document.getElementById('countdown-sound');
@@ -55,11 +57,16 @@
 
                 if (totalSeconds <= 10 && totalSeconds > 0) {
                     last10.style.display = 'block';
+                    last10.innerText = `LAST ${totalSeconds} SECOND${totalSeconds === 1 ? '' : 'S'}!`;
                     last10.classList.add('flash');
                     countdownSound.play();
                 }
 
                 if (totalSeconds === 0) {
+                    last10.style.display = 'block';
+                    last10.innerText = '🔥 BATTLE OVER! 🔥';
+                    last10.classList.add('flash');
+                    countdownSound.play();
                     clearInterval(interval);
                 }
 
