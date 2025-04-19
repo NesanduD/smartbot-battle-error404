@@ -64,9 +64,9 @@
 
                 if (totalSeconds === 0) {
                     last10.style.display = 'block';
-                    last10.innerText = '🔥 BATTLE OVER! 🔥';
+                    last10.innerText = '🔥 GAME OVER! 🔥';
                     last10.classList.add('flash');
-                    countdownSound.play();
+                    countdownSound.play()
                     clearInterval(interval);
                 }
 
@@ -76,5 +76,6 @@
 
         window.onload = startMatchTimer;
     </script>
+
 </body>
 </html>
