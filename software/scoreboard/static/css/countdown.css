@@ -1,0 +1,57 @@
+body {
+    margin: 0;
+    height: 100vh;
+    background-color: #0a0a0a;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Orbitron', sans-serif;
+    overflow: hidden;
+    transition: background-color 0.3s;
+}
+
+.countdown-container {
+    text-align: center;
+}
+
+#ready-text {
+    font-size: 3rem;
+    color: #00ffff;
+    margin-bottom: 20px;
+    text-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff;
+    animation: fadeIn 2s;
+}
+
+#count-number {
+    font-size: 10rem;
+    color: #00ffff;
+    text-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff;
+    animation: pulse 1s infinite;
+}
+
+.flash {
+    background-color: #ff0000 !important;
+}
+
+.go-glow {
+    color: #00ff00;
+    text-shadow: 0 0 30px #00ff00, 0 0 60px #00ff00;
+    animation: bigger 1s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+@keyframes bigger {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.4); }
+    100% { transform: scale(1); }
+}
+
+@keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}
