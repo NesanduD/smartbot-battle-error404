@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Countdown - SmartBot Battle</title>
+    <link rel="stylesheet" href="countdown.css">
+</head>
+<body>
+
+    <div class="countdown-container">
+        <div id="ready-text">Get Ready...</div>
+        <div id="count-number">5</div>
+    </div>
+
+    <!-- Sounds -->
+    <audio id="countdown-sound" src="sounds/countdown.mp3"></audio>
+    <audio id="tick-sound" src="sounds/countdown.mp3"></audio>
+    <audio id="start-sound" src="sounds/countdown.mp3"></audio>
+
+    <script>
+        let count = 5;
+        const readyText = document.getElementById("ready-text");
+        const countNumber = document.getElementById("count-number");
+        const countdownSound = document.getElementById("countdown-sound");
+        const tickSound = document.getElementById("tick-sound");
+        const startSound = document.getElementById("start-sound");
+
+        countdownSound.play();
+
+        setTimeout(() => {
+            readyText.style.display = 'none'; // Hide "Get Ready..." after 2 sec
+        }, 2000);
+
+        const countdown = setInterval(() => {
+            count--;
+            if (count >= 0) {
+                countNumber.textContent = count;
+                tickSound.play();
+
+                if (count <= 3 && count >= 1) {
+                    document.body.classList.add("flash"); // Flash background
+                    setTimeout(() => document.body.classList.remove("flash"), 300);
+                }
+
+                if (count === 0) {
+                    countNumber.textContent = "GO!";
+                    countNumber.classList.add("go-glow");
+                    startSound.play();
+                }
+            } else {
+                clearInterval(countdown);
+                setTimeout(() => {
+                    window.location.href = "/scoreboard"; // Redirect after 1s
+                }, 1000);
+            }
+        }, 1000);
+    </script>
+
+</body>
+</html>
