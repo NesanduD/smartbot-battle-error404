@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Bot Battle</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header>
+    <h1>Smart Bot Battle</h1>
+  </header>
+
+  <main>
+    <div class="content-container">
+      <p>Welcome to Smart Bot Battle !</p>
+
+      <div class="how-to-play">
+        <h2>How to Play</h2>
+        <ul>
+          <li>⚔️ Try to push smart bot out of the ring.</li>
+          <li>⏱️ Matches are timed — act quickly and strategically.</li>
+          <li>🏆 You earn points by pushing the smart bot out of the<br>&nbsp; &nbsp; &nbsp; &nbsp;ring within the time limit.</li>
+          <li>🥇 The bot with the most points at the end wins!</li>
+        </ul>
+      </div>
+
+      <button id="start-game-btn">Start Game</button>
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Smart Bot Battle. All rights reserved.</p>
+  </footer>
+
+  <audio id="click-sound" src="/static/sounds/click.mp3"></audio>
+
+  <script>
+    document.getElementById("start-game-btn").addEventListener("click", function () {
+      const clickSound = document.getElementById("click-sound");
+      clickSound.play();
+      window.location.href = "/countdown";
+    });
+  </script>
+</body>
+</html>
