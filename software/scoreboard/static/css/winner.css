@@ -1,0 +1,88 @@
+body {
+    margin: 0;
+    padding: 0;
+    background: radial-gradient(circle, #1f1f1f, #0d0d0d);
+    color: #fff;
+    font-family: 'Segoe UI', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+    animation: backgroundPulse 5s infinite alternate;
+}
+
+.winner-container {
+    text-align: center;
+    animation: fadeIn 2s ease-in;
+}
+
+.celebrate-text {
+    font-size: 3rem;
+    margin-bottom: 20px;
+    animation: pulse 1s infinite;
+}
+
+.winner-card {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 30px;
+    border-radius: 20px;
+    border: 2px solid #00ffe5;
+    box-shadow: 0 0 15px #00ffe5;
+    display: inline-block;
+    animation: glow 2s ease-in-out infinite alternate;
+}
+
+.winner-card img {
+    width: 200px;
+    height: auto;
+    border-radius: 10px;
+}
+
+#winner-name {
+    font-size: 2rem;
+    margin-top: 15px;
+}
+
+#restart-btn {
+    margin-top: 30px;
+    padding: 10px 25px;
+    font-size: 1.2rem;
+    background: #00ffe5;
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 0 10px #00ffe5;
+    transition: transform 0.2s;
+}
+
+#restart-btn:hover {
+    transform: scale(1.05);
+}
+
+
+@keyframes glow {
+    from {
+        box-shadow: 0 0 10px #00ffe5;
+    }
+    to {
+        box-shadow: 0 0 25px #00ffe5;
+    }
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); color: #fff; }
+    50% { transform: scale(1.05); color: #00ffe5; }
+    100% { transform: scale(1); color: #fff; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes backgroundPulse {
+    from { background-color: #0d0d0d; }
+    to { background-color: #1a1a1a; }
+}
