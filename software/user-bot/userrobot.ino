@@ -1,144 +1,130 @@
 #include <BluetoothSerial.h>
 #include <ESP32Servo.h>
 
-// Check if Bluetooth is enabled in the Arduino IDE
+// Ensure Bluetooth is enabled
 #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
 #error Bluetooth is not enabled!
 #endif
 
 BluetoothSerial SerialBT;
-Servo punchingArm; // Servo motor object
+Servo punchingArm;
 
 // Motor Driver Pins
-#define LEFT_MOTOR_FORWARD  23  // Left motor forward pin
-#define LEFT_MOTOR_BACKWARD 22  // Left motor backward pin
-#define RIGHT_MOTOR_FORWARD 21 // Right motor forward pin
-#define RIGHT_MOTOR_BACKWARD 19 // Right motor backward pin
-#define SERVO_PIN 18 // Servo motor control pin
+#define LEFT_MOTOR_FORWARD   23
+#define LEFT_MOTOR_BACKWARD  22
+#define RIGHT_MOTOR_FORWARD  21
+#define RIGHT_MOTOR_BACKWARD 19
+#define SERVO_PIN 18
+
+unsigned long lastCommandTime = 0;
+const unsigned long timeout = 30000; // 30 seconds
 
 void setup() {
-  // Initialize Serial Monitor with 115200 baud rate
   Serial.begin(115200);
-  
-  // Initialize Bluetooth Serial with a device name
   SerialBT.begin("UserRobot-BT");
-  
-  // Set motor driver pins as outputs
+
+  // Motor pins as output
   pinMode(LEFT_MOTOR_FORWARD, OUTPUT);
   pinMode(LEFT_MOTOR_BACKWARD, OUTPUT);
   pinMode(RIGHT_MOTOR_FORWARD, OUTPUT);
   pinMode(RIGHT_MOTOR_BACKWARD, OUTPUT);
-  
-  // Attach servo to its pin
-  punchingArm.setPeriodHertz(50); // Standard 50Hz servo PWM
-  punchingArm.attach(SERVO_PIN, 500, 2500); // Attach with min/max pulse width
-  punchingArm.write(0); // Set initial position
-  
-  // Turn off motors initially
+
+  // Servo setup
+  punchingArm.setPeriodHertz(50); 
+  punchingArm.attach(SERVO_PIN, 500, 2500);
+  punchingArm.write(0);
+
   stopMotors();
-  
-  // Print a message to confirm Bluetooth is ready
-  Serial.println("UserRobot is ready to receive movement commands");
-  Serial.println("Commands: 'f' (forward), 'b' (backward), 'l' (left), 'r' (right), 's' (stop), 'p' (punch)");
+
+  Serial.println("UserRobot ready | Commands: f b l r s p");
 }
 
 void loop() {
-  // Check if data is available from Bluetooth
+  // Handle Bluetooth disconnection
+  if (!SerialBT.hasClient()) {
+    stopMotors();  // Safety stop
+    return;
+  }
+
+  // Handle command input
   if (SerialBT.available()) {
-    // Read incoming character
     char receivedChar = SerialBT.read();
-    
-    // Process the received character
-    switch(receivedChar) {
-      case 'f': // Move forward
-        moveForward();
-        Serial.println("Moving forward");
-        SerialBT.println("Moving forward");
-        break;
-      
-      case 'b': // Move backward
-        moveBackward();
-        Serial.println("Moving backward");
-        SerialBT.println("Moving backward");
-        break;
-      
-      case 'l': // Turn left
-        turnLeft();
-        Serial.println("Turning left");
-        SerialBT.println("Turning left");
-        break;
-      
-      case 'r': // Turn right
-        turnRight();
-        Serial.println("Turning right");
-        SerialBT.println("Turning right");
-        break;
-      
-      case 's': // Stop
-        stopMotors();
-        Serial.println("Stopping");
-        SerialBT.println("Stopping");
-        break;
-      
-      case 'p': // Punching arm
-        activatePunchingArm();
-        Serial.println("Punching!");
-        SerialBT.println("Punching!");
-        break;
-      
+    lastCommandTime = millis();  // Reset inactivity timer
+
+    // Flush any junk data
+    while (SerialBT.available()) SerialBT.read();
+
+    // Ignore non-letter inputs
+    if (!isalpha(receivedChar)) {
+      Serial.println("Ignored non-alphabet character");
+      return;
+    }
+
+    // Execute command
+    switch (receivedChar) {
+      case 'f': moveForward();  break;
+      case 'b': moveBackward(); break;
+      case 'l': turnLeft();     break;
+      case 'r': turnRight();    break;
+      case 's': stopMotors();   break;
+      case 'p': activatePunchingArm(); break;
       default:
-        Serial.println("Invalid command received");
-        SerialBT.println("Invalid command. Use 'f', 'b', 'l', 'r', 's', 'p'");
+        Serial.println("Unknown command");
     }
   }
-  
-  // Small delay to prevent overwhelming the serial communication
-  delay(20);
+
+  // Stop robot if no commands for a while
+  if (millis() - lastCommandTime > timeout) {
+    stopMotors();
+  }
+
+  delay(10); // Yield to background tasks
 }
 
-// Function to move the robot forward
+// Movement Functions
 void moveForward() {
   digitalWrite(LEFT_MOTOR_FORWARD, LOW);
   digitalWrite(LEFT_MOTOR_BACKWARD, HIGH);
   digitalWrite(RIGHT_MOTOR_FORWARD, LOW);
   digitalWrite(RIGHT_MOTOR_BACKWARD, HIGH);
+  Serial.println("Forward");
 }
 
-// Function to move the robot backward
 void moveBackward() {
   digitalWrite(LEFT_MOTOR_FORWARD, HIGH);
   digitalWrite(LEFT_MOTOR_BACKWARD, LOW);
   digitalWrite(RIGHT_MOTOR_FORWARD, HIGH);
   digitalWrite(RIGHT_MOTOR_BACKWARD, LOW);
+  Serial.println("Backward");
 }
 
-// Function to turn the robot left
 void turnLeft() {
   digitalWrite(LEFT_MOTOR_FORWARD, HIGH);
   digitalWrite(LEFT_MOTOR_BACKWARD, LOW);
   digitalWrite(RIGHT_MOTOR_FORWARD, LOW);
   digitalWrite(RIGHT_MOTOR_BACKWARD, HIGH);
+  Serial.println("Left");
 }
 
-// Function to turn the robot right
 void turnRight() {
   digitalWrite(LEFT_MOTOR_FORWARD, LOW);
   digitalWrite(LEFT_MOTOR_BACKWARD, HIGH);
   digitalWrite(RIGHT_MOTOR_FORWARD, HIGH);
   digitalWrite(RIGHT_MOTOR_BACKWARD, LOW);
+  Serial.println("Right");
 }
 
-// Function to stop the robot
 void stopMotors() {
   digitalWrite(LEFT_MOTOR_FORWARD, LOW);
   digitalWrite(LEFT_MOTOR_BACKWARD, LOW);
   digitalWrite(RIGHT_MOTOR_FORWARD, LOW);
   digitalWrite(RIGHT_MOTOR_BACKWARD, LOW);
+  Serial.println("Stop");
 }
 
-// Function to activate the punching arm
 void activatePunchingArm() {
-  punchingArm.write(90); // Move servo to 90 degrees (punch position)
-  delay(300); // Hold position for a short duration
-  punchingArm.write(0); // Return to original position
+  punchingArm.write(90);
+  delay(300);
+  punchingArm.write(0);
+  Serial.println("Punch");
 }
