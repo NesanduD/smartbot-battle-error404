@@ -10,14 +10,14 @@
 
 // Ultrasonic Sensor Pins (For Movement Control)
 // Updated sensor placement: top-left, top-right, bottom-left, bottom-right
-#define TRIG_TOP_LEFT 4
-#define ECHO_TOP_LEFT 5
-#define TRIG_TOP_RIGHT 18
-#define ECHO_TOP_RIGHT 19
-#define TRIG_BOTTOM_LEFT 21
-#define ECHO_BOTTOM_LEFT 22
-#define TRIG_BOTTOM_RIGHT 23
-#define ECHO_BOTTOM_RIGHT 34
+#define TRIG_TOP_LEFT 13
+#define ECHO_TOP_LEFT 2
+#define TRIG_TOP_RIGHT 4
+#define ECHO_TOP_RIGHT 32
+#define TRIG_BOTTOM_LEFT 5
+#define ECHO_BOTTOM_LEFT 15
+#define TRIG_BOTTOM_RIGHT 14
+#define ECHO_BOTTOM_RIGHT 27
 
 // Proximity Sensor Pin (For Attack Control)
 #define PROX_PIN 35  // Digital Output from Proximity Sensor
