@@ -37,11 +37,18 @@
   <audio id="click-sound" src="/static/sounds/click.mp3"></audio>
 
   <script>
-    document.getElementById("start-game-btn").addEventListener("click", function () {
+    document.getElementById("start-game-btn").addEventListener("click", async function () {
       const clickSound = document.getElementById("click-sound");
       clickSound.play();
+  
+      // 🔁 Reset scores before starting the game
+      await fetch('/reset_scores', { method: 'POST' });
+  
+      // ➡️ Then go to countdown
       window.location.href = "/countdown";
     });
   </script>
+  
+  
 </body>
 </html>
