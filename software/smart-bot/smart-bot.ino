@@ -20,12 +20,18 @@
 #define TRIG_BACK_RIGHT   14
 #define ECHO_BACK_RIGHT   27
 
+// ==== Other Sensors ====
+#define PROX_PIN 33
+#define LEFT_IR_SENSOR 35
+#define RIGHT_IR_SENSOR 34
+
 #define CHASE_DISTANCE 50 // cm
 
 Servo punchServo;
 
 // ==== State Variables ====
 bool rotatingFromBack = false;
+bool lastProxState = LOW;
 
 // ==== Setup ====
 void setup() {
@@ -43,16 +49,23 @@ void setup() {
   pinMode(TRIG_BACK_LEFT, OUTPUT);   pinMode(ECHO_BACK_LEFT, INPUT);
   pinMode(TRIG_BACK_RIGHT, OUTPUT);  pinMode(ECHO_BACK_RIGHT, INPUT);
 
+  // Sensors
+  pinMode(PROX_PIN, INPUT);
+  pinMode(LEFT_IR_SENSOR, INPUT);
+  pinMode(RIGHT_IR_SENSOR, INPUT);
+
   // Servo
   punchServo.attach(SERVO_PIN);
-  punchServo.write(90);
+  punchServo.write(90); // Initial position
 
-  Serial.println("✅ Robot ready with chase-memory logic.");
+  Serial.println("✅ Robot ready with chase + punch + edge detection.");
 }
 
 // ==== Loop ====
 void loop() {
-  chaseTarget();
+  checkProximitySensor();    // Punch if opponent detected
+  checkEdgeSensors();        // IR check
+  chaseTarget();             // Movement logic
   delay(100);
 }
 
@@ -123,5 +136,29 @@ void chaseTarget() {
     Serial.println("🔄 No Detection → Rotate to Search");
     rotatingFromBack = false;
     turnRight();
+  }
+}
+
+// ==== Punch Logic ====
+void checkProximitySensor() {
+  bool currentState = digitalRead(PROX_PIN);
+
+  if (currentState == HIGH && lastProxState == LOW) {
+    Serial.println("💥 Opponent Detected → Punch!");
+    punchServo.write(0);   // Punch
+    delay(250);
+    punchServo.write(90);  // Reset
+  }
+
+  lastProxState = currentState;
+}
+
+// ==== IR Sensor Check ====
+void checkEdgeSensors() {
+  bool leftEdge = digitalRead(LEFT_IR_SENSOR) == HIGH;
+  bool rightEdge = digitalRead(RIGHT_IR_SENSOR) == HIGH;
+
+  if (leftEdge && rightEdge) {
+    Serial.println("⚠️ BOTH IR SENSORS DETECTED EDGE");
   }
 }
