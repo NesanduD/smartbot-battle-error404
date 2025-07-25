@@ -3,21 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <title>Winner - SmartBot Battle</title>
-    <link rel="stylesheet" href="/static/css/winner.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/winner.css') }}">
 </head>
 <body>
     <div class="winner-container">
         <h1 class="celebrate-text">🏆 Winner 🏆</h1>
 
         <div class="winner-card">
-            <img id="winner-img" src="" alt="Winner Robot">
+            
+            <img id="winner-img" src="{{ url_for('static', filename='images/robot.png') }}" alt="Winner Robot">  
             <h2 id="winner-name"></h2>
             <div class="score-box">
                 <p><strong>SmartBot:</strong> <span id="score-R1">0</span></p>
                 <p><strong>UserBot:</strong> <span id="score-R2">0</span></p>
             </div>
         </div>
-
+         
+        <br>
         <button id="restart-btn">Restart Game</button>
         <audio id="winner-sound" src="/static/sounds/winner.mp3" preload="auto"></audio>
     </div>
