@@ -1,130 +1,62 @@
-#include <BluetoothSerial.h>
-#include <ESP32Servo.h>
+#include <WiFi.h>
+#include <HTTPClient.h>
 
-// Ensure Bluetooth is enabled
-#if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
-#error Bluetooth is not enabled!
-#endif
+const char* ssid = "espadmin";
+const char* password = "12345678";
+const char* server = "http://10.10.30.107:5000/score";
 
-BluetoothSerial SerialBT;
-Servo punchingArm;
+#define IR_FRONT 22
+#define IR_BACK 23
 
-// Motor Driver Pins
-#define LEFT_MOTOR_FORWARD   23
-#define LEFT_MOTOR_BACKWARD  22
-#define RIGHT_MOTOR_FORWARD  21
-#define RIGHT_MOTOR_BACKWARD 19
-#define SERVO_PIN 18
-
-unsigned long lastCommandTime = 0;
-const unsigned long timeout = 30000; // 30 seconds
+bool alertSent = false;
 
 void setup() {
   Serial.begin(115200);
-  SerialBT.begin("UserRobot-BT");
 
-  // Motor pins as output
-  pinMode(LEFT_MOTOR_FORWARD, OUTPUT);
-  pinMode(LEFT_MOTOR_BACKWARD, OUTPUT);
-  pinMode(RIGHT_MOTOR_FORWARD, OUTPUT);
-  pinMode(RIGHT_MOTOR_BACKWARD, OUTPUT);
+  pinMode(IR_FRONT, INPUT);
+  pinMode(IR_BACK, INPUT);
 
-  // Servo setup
-  punchingArm.setPeriodHertz(50); 
-  punchingArm.attach(SERVO_PIN, 500, 2500);
-  punchingArm.write(0);
-
-  stopMotors();
-
-  Serial.println("UserRobot ready | Commands: f b l r s p");
+  WiFi.begin(ssid, password);
+  Serial.print("Connecting to WiFi");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\nConnected to WiFi!");
 }
 
 void loop() {
-  // Handle Bluetooth disconnection
-  if (!SerialBT.hasClient()) {
-    stopMotors();  // Safety stop
-    return;
+  bool frontDetected = (digitalRead(IR_FRONT) == LOW);
+  bool backDetected = (digitalRead(IR_BACK) == LOW);
+
+  if (frontDetected && backDetected && !alertSent) {
+    Serial.println("Defeat detected!");
+    sendScoreUpdate();
+    alertSent = true;
   }
 
-  // Handle command input
-  if (SerialBT.available()) {
-    char receivedChar = SerialBT.read();
-    lastCommandTime = millis();  // Reset inactivity timer
-
-    // Flush any junk data
-    while (SerialBT.available()) SerialBT.read();
-
-    // Ignore non-letter inputs
-    if (!isalpha(receivedChar)) {
-      Serial.println("Ignored non-alphabet character");
-      return;
-    }
-
-    // Execute command
-    switch (receivedChar) {
-      case 'f': moveForward();  break;
-      case 'b': moveBackward(); break;
-      case 'l': turnLeft();     break;
-      case 'r': turnRight();    break;
-      case 's': stopMotors();   break;
-      case 'p': activatePunchingArm(); break;
-      default:
-        Serial.println("Unknown command");
-    }
+  // Reset alertSent once sensors no longer detect black
+  if (!frontDetected || !backDetected) {
+    alertSent = false;
   }
 
-  // Stop robot if no commands for a while
-  if (millis() - lastCommandTime > timeout) {
-    stopMotors();
+  delay(100); // Small debounce delay
+}
+
+void sendScoreUpdate() {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    http.begin(server);
+    http.addHeader("Content-Type", "application/json");
+
+    String payload = "{\"robot\":\"R1\",\"event\":\"edge_detected\",\"score\":1}";
+    int httpResponseCode = http.POST(payload);
+
+    Serial.print("POST Response code: ");
+    Serial.println(httpResponseCode);
+
+    http.end();
+  } else {
+    Serial.println("WiFi not connected, cannot send score.");
   }
-
-  delay(10); // Yield to background tasks
-}
-
-// Movement Functions
-void moveForward() {
-  digitalWrite(LEFT_MOTOR_FORWARD, LOW);
-  digitalWrite(LEFT_MOTOR_BACKWARD, HIGH);
-  digitalWrite(RIGHT_MOTOR_FORWARD, LOW);
-  digitalWrite(RIGHT_MOTOR_BACKWARD, HIGH);
-  Serial.println("Forward");
-}
-
-void moveBackward() {
-  digitalWrite(LEFT_MOTOR_FORWARD, HIGH);
-  digitalWrite(LEFT_MOTOR_BACKWARD, LOW);
-  digitalWrite(RIGHT_MOTOR_FORWARD, HIGH);
-  digitalWrite(RIGHT_MOTOR_BACKWARD, LOW);
-  Serial.println("Backward");
-}
-
-void turnLeft() {
-  digitalWrite(LEFT_MOTOR_FORWARD, HIGH);
-  digitalWrite(LEFT_MOTOR_BACKWARD, LOW);
-  digitalWrite(RIGHT_MOTOR_FORWARD, LOW);
-  digitalWrite(RIGHT_MOTOR_BACKWARD, HIGH);
-  Serial.println("Left");
-}
-
-void turnRight() {
-  digitalWrite(LEFT_MOTOR_FORWARD, LOW);
-  digitalWrite(LEFT_MOTOR_BACKWARD, HIGH);
-  digitalWrite(RIGHT_MOTOR_FORWARD, HIGH);
-  digitalWrite(RIGHT_MOTOR_BACKWARD, LOW);
-  Serial.println("Right");
-}
-
-void stopMotors() {
-  digitalWrite(LEFT_MOTOR_FORWARD, LOW);
-  digitalWrite(LEFT_MOTOR_BACKWARD, LOW);
-  digitalWrite(RIGHT_MOTOR_FORWARD, LOW);
-  digitalWrite(RIGHT_MOTOR_BACKWARD, LOW);
-  Serial.println("Stop");
-}
-
-void activatePunchingArm() {
-  punchingArm.write(90);
-  delay(300);
-  punchingArm.write(0);
-  Serial.println("Punch");
 }
