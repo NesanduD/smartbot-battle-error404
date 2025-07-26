@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>SmartBot Battle Scoreboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/scoreboard.css') }}">
+    <link rel="stylesheet" href="/software/scoreboard/static/css/scoreboard.css">
     <style>
         #last10 {
             display: none;
@@ -16,7 +16,7 @@
         <div class="scoreboard glass">
             <div class="bot" id="smartbot">
                 <div class="bot-img">
-                    <img src="{{ url_for('static', filename='images/robot.png') }}" alt="SmartBot" />
+                    <img src="/software/scoreboard/static/images/robot.png" alt="SmartBot" />
                 </div>
                 <h2>SmartBot</h2>
                 <div class="score glow" id="R1-score">0</div>
@@ -29,7 +29,7 @@
 
             <div class="bot" id="userbot">
                 <div class="bot-img">
-                    <img src="{{ url_for('static', filename='images/robot.png') }}" alt="UserBot" />
+                    <img src="/software/scoreboard/static/images/robot.png" alt="UserBot" />
                 </div>
                 <h2>UserBot</h2>
                 <div class="score glow" id="R2-score">0</div>

@@ -1,9 +1,10 @@
-from flask import Flask, request, jsonify, render_template, redirect
 
-from flask_cors import CORS
+from flask import Flask, request, jsonify, render_template
+
+from flask_cors import CORS  # Import CORS
 
 app = Flask(__name__)
-CORS(app)
+CORS(app)  # Enable CORS for all routes
 
 scores = {"R1": 0, "R2": 0}
 
@@ -19,36 +20,15 @@ def update_score():
         return jsonify({"status": "success", "scores": scores})
     return jsonify({"status": "failure", "message": "Invalid robot"}), 400
 
+# API to get scores
 @app.route('/get_scores', methods=['GET'])
 def get_scores():
     return jsonify({"scores": scores})
 
-@app.route('/')
-def home():
-    return redirect('/index')
-
-@app.route('/index')
-def index():
-    return render_template('index.html')
-
-@app.route('/countdown')
-def countdown():
-    return render_template('countdown.html')
-
+# Route to show the scoreboard HTML page
 @app.route('/scoreboard')
 def scoreboard():
-    return render_template('scoreboard.html')
-
-@app.route('/winner')
-def winner():
-    return render_template('winner.html')
-
-@app.route('/reset_scores', methods=['POST'])
-def reset_scores():
-    global scores
-    scores = {"R1": 0, "R2": 0}
-    return jsonify({"status": "reset", "scores": scores})
-
+    return render_template("scoreboard.html")
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0")
