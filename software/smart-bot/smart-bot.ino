@@ -1,3 +1,4 @@
+
 #include <Wire.h>
 #include <Adafruit_TCS34725.h>
 #include <ESP32Servo.h>
@@ -33,17 +34,15 @@
 
 // ==== Constants ====
 #define ENEMY_RANGE_CM 50
-#define PUSHING_RANGE_CM 15
 #define PUNCH_DELAY 500
 #define IR_ANALOG_THRESHOLD 1000
-#define IR_CONFIRM_TIME 50
-#define IR_REACT_TIME 1500
+#define IR_CONFIRM_TIME 10         // in milliseconds
+#define IR_REACT_TIME 1500          // move time if confirmed
 
 // ==== WiFi Settings ====
 const char* ssid = "espadmin";
 const char* password = "12345678";
-const char* server = "http://192.168.8.172:5000/score";
-
+const char* server = "http://192.168.209.168:5000/score";
 bool alertSent = false;
 
 // ==== State ====
@@ -53,34 +52,53 @@ bool inGreenZone = false;
 Adafruit_TCS34725 colorSensor = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
 Servo hammer;
 
-void setup() {
+// ==== Setup ====
+void setup() 
+{
   Serial.begin(115200);
 
+  // Motor pins
   pinMode(LEFT_MOTOR_FORWARD, OUTPUT);
   pinMode(LEFT_MOTOR_BACKWARD, OUTPUT);
   pinMode(RIGHT_MOTOR_FORWARD, OUTPUT);
   pinMode(RIGHT_MOTOR_BACKWARD, OUTPUT);
 
+  // Ultrasonic pins
   pinMode(TRIG_TOP_LEFT, OUTPUT); pinMode(ECHO_TOP_LEFT, INPUT);
   pinMode(TRIG_TOP_RIGHT, OUTPUT); pinMode(ECHO_TOP_RIGHT, INPUT);
   pinMode(TRIG_BOTTOM_LEFT, OUTPUT); pinMode(ECHO_BOTTOM_LEFT, INPUT);
   pinMode(TRIG_BOTTOM_RIGHT, OUTPUT); pinMode(ECHO_BOTTOM_RIGHT, INPUT);
 
+  // Color sensor
   Wire.begin(SDA_PIN, SCL_PIN);
   colorSensor.begin();
 
+  // Servo
   hammer.attach(SERVO_PIN);
-  hammer.write(0);
+  hammer.write(0);  // Initial hammer position
 
+WiFi.begin(ssid, password);
+Serial.print("Connecting to WiFi");
+
+int retry = 0;
+while (WiFi.status() != WL_CONNECTED && retry < 20) {
+  delay(500);
+  Serial.print(".");
+  retry++;
   WiFi.begin(ssid, password);
-  Serial.print("Connecting to WiFi");
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("\nConnected to WiFi!");
 }
 
+if (WiFi.status() == WL_CONNECTED) {
+  Serial.println("\n✅ Connected to WiFi!");
+  Serial.print("📶 IP Address: ");
+  Serial.println(WiFi.localIP());
+} else {
+  Serial.println("\n❌ Failed to connect to WiFi!");
+}
+
+}
+
+// ==== Movement Functions ====
 void moveForward() {
   digitalWrite(LEFT_MOTOR_FORWARD, HIGH);
   digitalWrite(LEFT_MOTOR_BACKWARD, LOW);
@@ -102,20 +120,26 @@ void stopMotors() {
   digitalWrite(RIGHT_MOTOR_BACKWARD, LOW);
 }
 
-void rotateLeftSlow() {
+void rotateLeft() {
   digitalWrite(LEFT_MOTOR_FORWARD, LOW);
-  digitalWrite(LEFT_MOTOR_BACKWARD, LOW);
+  digitalWrite(LEFT_MOTOR_BACKWARD, HIGH);
   digitalWrite(RIGHT_MOTOR_FORWARD, HIGH);
   digitalWrite(RIGHT_MOTOR_BACKWARD, LOW);
-  delay(300);
-  stopMotors();
 }
 
+void rotateRight() {
+  digitalWrite(RIGHT_MOTOR_FORWARD, LOW);
+  digitalWrite(RIGHT_MOTOR_BACKWARD, HIGH);
+  digitalWrite(LEFT_MOTOR_FORWARD, HIGH);
+  digitalWrite(LEFT_MOTOR_BACKWARD, LOW);
+}
+
+// ==== Utility Functions ====
 float readDistanceCM(int trigPin, int echoPin) {
   digitalWrite(trigPin, LOW); delayMicroseconds(2);
   digitalWrite(trigPin, HIGH); delayMicroseconds(10);
   digitalWrite(trigPin, LOW);
-  long duration = pulseIn(echoPin, HIGH, 30000);
+  long duration = pulseIn(echoPin, HIGH, 30000); // 30ms timeout
   return duration * 0.034 / 2.0;
 }
 
@@ -138,12 +162,18 @@ void punchHammer() {
   delay(PUNCH_DELAY);
 }
 
+
+// ==== Confirm Continuous IR Detection ====
 bool confirmIRDetection(int pin) {
   unsigned long startTime = millis();
   while (millis() - startTime < IR_CONFIRM_TIME) {
-    if (analogRead(pin) <= IR_ANALOG_THRESHOLD) return false;
+    int val = analogRead(pin);
+    if (val <= IR_ANALOG_THRESHOLD) {
+      return false;  // If it drops below during confirm window, reject
+    }
   }
   return true;
+  
 }
 
 void sendScoreUpdate() {
@@ -155,40 +185,49 @@ void sendScoreUpdate() {
     String payload = "{\"robot\":\"R2\",\"event\":\"edge_detected\",\"score\":1}";
     int httpResponseCode = http.POST(payload);
 
-    Serial.print("POST Response code: ");
+    Serial.print("📤 POST Response code: ");
     Serial.println(httpResponseCode);
 
     http.end();
   } else {
-    Serial.println("WiFi not connected, cannot send score.");
+    Serial.println("❌ WiFi not connected, cannot send score.");
   }
 }
 
-void loop() {
-  int frontIR = analogRead(IR_FRONT);
-  int backIR  = analogRead(IR_BACK);
 
-  Serial.print("Front IR: "); Serial.print(frontIR);
-  Serial.print(" | Back IR: "); Serial.println(backIR);
+// ==== Main Loop ====
+void loop() 
+{
 
-  if (frontIR > IR_ANALOG_THRESHOLD && backIR > IR_ANALOG_THRESHOLD &&
-      confirmIRDetection(IR_FRONT) && confirmIRDetection(IR_BACK)) {
-    stopMotors();
-    Serial.println("🛑 BOTH IR triggered! System lost. Sending signal...");
-    if (!alertSent) {
-      sendScoreUpdate();
-      alertSent = true;
-    }
-    while (true) {
-      stopMotors();
-      delay(1000);
-    }
-  } else {
-    alertSent = false;
-  }
+  // ==== IR Sensor Analog Logic with Confirmation ====
+int frontIR = analogRead(IR_FRONT);
+int backIR = analogRead(IR_BACK);
+
+if (alertSent) 
+{
+  stopMotors(); // Freeze bot
+  return;       // Skip rest of the loop
+}
+
+Serial.print("Front IR: "); Serial.print(frontIR);
+Serial.print(" | Back IR: "); Serial.println(backIR);
+
+// === DEFEAT Detection ===
+if (frontIR > IR_ANALOG_THRESHOLD && backIR > IR_ANALOG_THRESHOLD && !alertSent) {
+  Serial.println("💀 DEFEAT DETECTED — Both IR sensors triggered!");
+  stopMotors();
+  sendScoreUpdate();
+  alertSent = true;
+  return;  // stop the loop completely
+}
+
+// Reset alert if lifted
+if (frontIR < IR_ANALOG_THRESHOLD && backIR < IR_ANALOG_THRESHOLD) {
+  alertSent = false;  // Ready for next match
+}
 
   if (frontIR > IR_ANALOG_THRESHOLD && confirmIRDetection(IR_FRONT)) {
-    Serial.println("⬛ FRONT IR DETECTED → GO BACK");
+    Serial.println("✅ Confirmed FRONT IR detection → Going BACKWARD...");
     moveBackward();
     delay(IR_REACT_TIME);
     stopMotors();
@@ -196,74 +235,108 @@ void loop() {
   }
 
   if (backIR > IR_ANALOG_THRESHOLD && confirmIRDetection(IR_BACK)) {
-    Serial.println("⬛ BACK IR DETECTED → GO FORWARD");
+    Serial.println("✅ Confirmed BACK IR detection → Going FORWARD...");
     moveForward();
     delay(IR_REACT_TIME);
     stopMotors();
     return;
   }
 
+  // ==== Color Detection ====
   uint16_t r, g, b;
   String currentZone = detectColorZone(r, g, b);
+
+  Serial.println("==== ZONE & COLOR INFO ====");
+  Serial.print("Detected Zone: "); Serial.println(currentZone);
+  Serial.print("R: "); Serial.print(r);
+  Serial.print(" G: "); Serial.print(g);
+  Serial.print(" B: "); Serial.println(b);
 
   if (!inGreenZone) {
     moveForward();
     if (currentZone == "GREEN") {
       stopMotors();
       inGreenZone = true;
-      Serial.println("✅ Green zone reached. Begin scan.");
+      Serial.println("✅ Green zone reached. Begin enemy scan.");
       delay(500);
     }
   } else {
+    if (currentZone == "RED") {
+  Serial.println("🚨 Red zone detected!");
+
+  float frontLeft = readDistanceCM(TRIG_TOP_LEFT, ECHO_TOP_LEFT);
+  float frontRight = readDistanceCM(TRIG_TOP_RIGHT, ECHO_TOP_RIGHT);
+  bool enemyVeryCloseInFront = (frontLeft > 0 && frontLeft < 10) || (frontRight > 0 && frontRight < 10);
+
+  if (enemyVeryCloseInFront) {
+    Serial.println("🛡️ Enemy detected within 10cm IN RED zone → Pushing...");
+
+    while (true) {
+  moveForward();        // Keep pushing
+  punchHammer();        // Keep punching while pushing
+
+  int frontIR = analogRead(IR_FRONT);
+  if (frontIR > IR_ANALOG_THRESHOLD && confirmIRDetection(IR_FRONT)) {
+    Serial.println("⬛ Front IR detected BLACK line → Retreating...");
+    moveBackward();
+    delay(IR_REACT_TIME);
+    stopMotors();
+    break;
+  }
+
+  delay(100);  // Delay to give servo time and reduce spam
+}
+
+
+    return;
+  } else {
+    Serial.println("🚨 In RED zone without pushing → Backing off.");
+    moveBackward();
+    delay(1500);
+    stopMotors();
+    return;
+  }
+}
+
+
+    // ==== Ultrasonic readings ====
     float frontLeft = readDistanceCM(TRIG_TOP_LEFT, ECHO_TOP_LEFT);
     float frontRight = readDistanceCM(TRIG_TOP_RIGHT, ECHO_TOP_RIGHT);
     float backLeft = readDistanceCM(TRIG_BOTTOM_LEFT, ECHO_BOTTOM_LEFT);
     float backRight = readDistanceCM(TRIG_BOTTOM_RIGHT, ECHO_BOTTOM_RIGHT);
+
+    Serial.println("==== ULTRASONIC READINGS (cm) ====");
+    Serial.print("Front Left: "); Serial.println(frontLeft);
+    Serial.print("Front Right: "); Serial.println(frontRight);
+    Serial.print("Back Left: "); Serial.println(backLeft);
+    Serial.print("Back Right: "); Serial.println(backRight);
 
     bool enemyFront = (frontLeft > 0 && frontLeft < ENEMY_RANGE_CM) ||
                       (frontRight > 0 && frontRight < ENEMY_RANGE_CM);
     bool enemyBack = (backLeft > 0 && backLeft < ENEMY_RANGE_CM) ||
                      (backRight > 0 && backRight < ENEMY_RANGE_CM);
 
-    if (currentZone == "RED" &&
-        ((frontLeft > 0 && frontLeft < PUSHING_RANGE_CM) ||
-         (frontRight > 0 && frontRight < PUSHING_RANGE_CM))) {
-      Serial.println("🤜 PUSHING ENEMY OUT OF RING");
-      while (true) {
-        moveForward();
-        if (analogRead(IR_FRONT) > IR_ANALOG_THRESHOLD && confirmIRDetection(IR_FRONT)) {
-          Serial.println("⬛ FRONT IR HIT → BACK OFF AFTER PUSH");
-          moveBackward();
-          delay(IR_REACT_TIME);
-          stopMotors();
-          break;
-        }
-        delay(50);
-      }
-      return;
-    }
-
     if (enemyFront) {
-      Serial.println("🎯 Enemy in front. Charging...");
+      Serial.println("🎯 Enemy detected IN FRONT. Charging...");
       moveForward();
       delay(200);
       punchHammer();
     } else if (enemyBack) {
-      Serial.println("🔄 Enemy behind. Rotating...");
+      Serial.println("🔄 Enemy detected BEHIND. Rotating to face...");
       while (true) {
-        rotateLeftSlow();
-        float newFL = readDistanceCM(TRIG_TOP_LEFT, ECHO_TOP_LEFT);
-        float newFR = readDistanceCM(TRIG_TOP_RIGHT, ECHO_TOP_RIGHT);
-        if ((newFL > 0 && newFL < ENEMY_RANGE_CM) ||
-            (newFR > 0 && newFR < ENEMY_RANGE_CM)) {
-          Serial.println("✅ Enemy now in front.");
+        rotateLeft();
+        float newFrontLeft = readDistanceCM(TRIG_TOP_LEFT, ECHO_TOP_LEFT);
+        float newFrontRight = readDistanceCM(TRIG_TOP_RIGHT, ECHO_TOP_RIGHT);
+        if ((newFrontLeft > 0 && newFrontLeft < ENEMY_RANGE_CM) ||
+            (newFrontRight > 0 && newFrontRight < ENEMY_RANGE_CM)) {
+          Serial.println("✅ Enemy now in front. Charging...");
           break;
         }
       }
     } else {
-      Serial.println("🔄 Scanning for enemy...");
+      Serial.println("😐 No enemy detected. Rotating until enemy found...");
       while (true) {
-        rotateLeftSlow();
+        rotateLeft();
         float newFL = readDistanceCM(TRIG_TOP_LEFT, ECHO_TOP_LEFT);
         float newFR = readDistanceCM(TRIG_TOP_RIGHT, ECHO_TOP_RIGHT);
         float newBL = readDistanceCM(TRIG_BOTTOM_LEFT, ECHO_BOTTOM_LEFT);
@@ -272,12 +345,13 @@ void loop() {
             (newFR > 0 && newFR < ENEMY_RANGE_CM) ||
             (newBL > 0 && newBL < ENEMY_RANGE_CM) ||
             (newBR > 0 && newBR < ENEMY_RANGE_CM)) {
-          Serial.println("✅ Enemy found.");
+          Serial.println("✅ Enemy found while rotating.");
           break;
         }
       }
     }
   }
 
+  Serial.println("==================================");
   delay(50);
-}
+} 
