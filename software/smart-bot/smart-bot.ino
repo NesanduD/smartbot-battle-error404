@@ -42,7 +42,7 @@
 // ==== WiFi Settings ====
 const char* ssid = "espadmin";
 const char* password = "12345678";
-const char* server = "http://192.168.209.168:5000/score";
+const char* server = "http://192.168.137.1:5000/score";
 bool alertSent = false;
 
 // ==== State ====
@@ -133,6 +133,21 @@ void rotateRight() {
   digitalWrite(LEFT_MOTOR_FORWARD, HIGH);
   digitalWrite(LEFT_MOTOR_BACKWARD, LOW);
 }
+
+void rotateSlowLeft() {
+  digitalWrite(LEFT_MOTOR_FORWARD, LOW);
+  digitalWrite(LEFT_MOTOR_BACKWARD, LOW); // Left motor stays OFF
+  digitalWrite(RIGHT_MOTOR_FORWARD, HIGH);
+  digitalWrite(RIGHT_MOTOR_BACKWARD, LOW); // Only right motor forward
+}
+
+void rotateSlowRight() {
+  digitalWrite(LEFT_MOTOR_FORWARD, HIGH);
+  digitalWrite(LEFT_MOTOR_BACKWARD, LOW);  // Only left motor forward
+  digitalWrite(RIGHT_MOTOR_FORWARD, LOW);
+  digitalWrite(RIGHT_MOTOR_BACKWARD, LOW); // Right motor stays OFF
+}
+
 
 // ==== Utility Functions ====
 float readDistanceCM(int trigPin, int echoPin) {
@@ -272,8 +287,18 @@ if (frontIR < IR_ANALOG_THRESHOLD && backIR < IR_ANALOG_THRESHOLD) {
     Serial.println("🛡️ Enemy detected within 10cm IN RED zone → Pushing...");
 
     while (true) {
-  moveForward();        // Keep pushing
-  punchHammer();        // Keep punching while pushing
+  float fLeft = readDistanceCM(TRIG_TOP_LEFT, ECHO_TOP_LEFT);
+  float fRight = readDistanceCM(TRIG_TOP_RIGHT, ECHO_TOP_RIGHT);
+  bool stillEnemy = (fLeft > 0 && fLeft < 10) || (fRight > 0 && fRight < 10);
+
+  if (!stillEnemy) {
+    Serial.println("🛑 Enemy no longer in front. Stop pushing.");
+    stopMotors();
+    break;
+  }
+
+  moveForward();
+  punchHammer();
 
   int frontIR = analogRead(IR_FRONT);
   if (frontIR > IR_ANALOG_THRESHOLD && confirmIRDetection(IR_FRONT)) {
@@ -284,8 +309,9 @@ if (frontIR < IR_ANALOG_THRESHOLD && backIR < IR_ANALOG_THRESHOLD) {
     break;
   }
 
-  delay(100);  // Delay to give servo time and reduce spam
+  delay(100);
 }
+
 
 
     return;
@@ -324,7 +350,7 @@ if (frontIR < IR_ANALOG_THRESHOLD && backIR < IR_ANALOG_THRESHOLD) {
     } else if (enemyBack) {
       Serial.println("🔄 Enemy detected BEHIND. Rotating to face...");
       while (true) {
-        rotateLeft();
+        rotateSlowLeft();
         float newFrontLeft = readDistanceCM(TRIG_TOP_LEFT, ECHO_TOP_LEFT);
         float newFrontRight = readDistanceCM(TRIG_TOP_RIGHT, ECHO_TOP_RIGHT);
         if ((newFrontLeft > 0 && newFrontLeft < ENEMY_RANGE_CM) ||
@@ -336,7 +362,7 @@ if (frontIR < IR_ANALOG_THRESHOLD && backIR < IR_ANALOG_THRESHOLD) {
     } else {
       Serial.println("😐 No enemy detected. Rotating until enemy found...");
       while (true) {
-        rotateLeft();
+        rotateSlowLeft();
         float newFL = readDistanceCM(TRIG_TOP_LEFT, ECHO_TOP_LEFT);
         float newFR = readDistanceCM(TRIG_TOP_RIGHT, ECHO_TOP_RIGHT);
         float newBL = readDistanceCM(TRIG_BOTTOM_LEFT, ECHO_BOTTOM_LEFT);
